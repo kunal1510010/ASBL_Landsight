@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, School, Hospital, ShoppingBag, TrainFront, Route as RouteIcon,
-  Building2, Users, Tag, ShieldAlert, Wallet, Calculator, ArrowRight,
+  Building2, Users, Tag, ShieldAlert, Wallet, Calculator, ArrowRight, BarChart2,
 } from "lucide-react";
 
 const CHART = ["#2f7a5d", "#d99a2b", "#c75b39", "#4169a8", "#8d5fb0"];
@@ -196,8 +196,17 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 2. Demographics */}
-        <Section icon={<School className="h-4 w-4" />} title="2. Local demographics & social infra" subtitle="Schools, hospitals, malls and connectivity">
+        {/* 2. Competitive supply */}
+        <Section icon={<BarChart2 className="h-4 w-4" />} title="2. Competitive supply & inventory" subtitle="Unsold inventory within 3–5 km, months-of-inventory at current velocity, upcoming launches">
+          <div className={cn("grid gap-4", compare && "md:grid-cols-2")}>
+            {effective.map((p) => (
+              <SupplyIntelPanel key={p.id} parcel={p} showName={compare} />
+            ))}
+          </div>
+        </Section>
+
+        {/* 3. Demographics */}
+        <Section icon={<School className="h-4 w-4" />} title="3. Local demographics & social infra" subtitle="Schools, hospitals, malls and connectivity">
           <div className={cn("grid gap-4", compare && "md:grid-cols-2")}>
             {effective.map((p) => (
               <div key={p.id} className="rounded-lg border p-4 space-y-3">
@@ -214,8 +223,8 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 3. Corridors */}
-        <Section icon={<Building2 className="h-4 w-4" />} title="3. Upcoming corridors, SEZs & infra" subtitle="Announced projects driving future demand">
+        {/* 4. Corridors */}
+        <Section icon={<Building2 className="h-4 w-4" />} title="4. Upcoming corridors, SEZs & infra" subtitle="Announced projects driving future demand">
           <div className={cn("grid gap-3", compare && "md:grid-cols-2")}>
             {effective.map((p) => (
               <div key={p.id} className="rounded-lg border p-4">
@@ -232,8 +241,8 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 4. Flat config */}
-        <Section icon={<Building2 className="h-4 w-4" />} title="4. Flat configurations that sell" subtitle="Share of recent absorption by unit type">
+        {/* 5. Flat config */}
+        <Section icon={<Building2 className="h-4 w-4" />} title="5. Flat configurations that sell" subtitle="Share of recent absorption by unit type">
           <div className={cn("grid gap-4", compare && "md:grid-cols-2")}>
             {effective.map((p) => (
               <div key={p.id} className="rounded-lg border p-4">
@@ -254,8 +263,8 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 5. Customer base */}
-        <Section icon={<Users className="h-4 w-4" />} title="5. Major customer base" subtitle="Who buys in this micro-market">
+        {/* 6. Customer base */}
+        <Section icon={<Users className="h-4 w-4" />} title="6. Major customer base" subtitle="Who buys in this micro-market">
           <div className={cn("grid gap-4", compare && "md:grid-cols-2")}>
             {effective.map((p) => (
               <div key={p.id} className="rounded-lg border p-4">
@@ -276,8 +285,8 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 6. Land category */}
-        <Section icon={<Tag className="h-4 w-4" />} title="6. Land category" subtitle="Zoning classification & conversion need">
+        {/* 7. Land category */}
+        <Section icon={<Tag className="h-4 w-4" />} title="7. Land category" subtitle="Zoning classification & conversion need">
           <div className={cn("grid gap-3", compare && "md:grid-cols-2")}>
             {effective.map((p) => {
               const needsConv = p.category === "Agricultural";
@@ -297,8 +306,8 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 7. Limitations */}
-        <Section icon={<ShieldAlert className="h-4 w-4" />} title="7. Geographic / industrial limitations" subtitle="Constraints that may block or slow construction">
+        {/* 8. Limitations */}
+        <Section icon={<ShieldAlert className="h-4 w-4" />} title="8. Geographic / industrial limitations" subtitle="Constraints that may block or slow construction">
           <div className={cn("grid gap-3", compare && "md:grid-cols-2")}>
             {effective.map((p) => (
               <div key={p.id} className={cn("rounded-lg border p-4", p.blocked && "border-destructive/60 bg-destructive/5")}>
@@ -319,8 +328,8 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 8. Profitability link */}
-        <Section icon={<Calculator className="h-4 w-4" />} title="8. Project profitability" subtitle="Configure towers, floors, units & SFT to see cashflow">
+        {/* 9. Profitability link */}
+        <Section icon={<Calculator className="h-4 w-4" />} title="9. Project profitability" subtitle="Configure towers, floors, units & SFT to see cashflow">
           <div className={cn("grid gap-3", compare && "md:grid-cols-2")}>
             {effective.map((p) => (
               <div key={p.id} className="rounded-lg border p-4 flex items-center justify-between gap-3">
@@ -336,10 +345,10 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 9. Finance - real portfolio cashflow */}
+        {/* 10. Finance - real portfolio cashflow */}
         <Section
           icon={<Wallet className="h-4 w-4" />}
-          title="9. Company finance approval"
+          title="10. Company finance approval"
           subtitle={finance ? `Computed against ${finance.generatedFrom}` : "Computed against portfolio cashflow"}
         >
           <div className={cn("grid gap-3", compare && "md:grid-cols-2")}>
@@ -349,10 +358,10 @@ export default function AnalyzePage() {
           </div>
         </Section>
 
-        {/* 10. Approvals checklist */}
+        {/* 11. Approvals checklist */}
         <Section
           icon={<ShieldAlert className="h-4 w-4" />}
-          title="10. Approval checklist"
+          title="11. Approval checklist"
           subtitle="City-specific regulatory approvals required from land acquisition to occupancy"
         >
           <div className={cn("grid gap-4", compare && "md:grid-cols-2")}>
@@ -424,6 +433,107 @@ function Demo({ icon, label, value }: { icon: React.ReactNode; label: string; va
       <div className="mx-auto w-fit text-muted-foreground">{icon}</div>
       <div className="text-sm font-semibold mt-1">{value}</div>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function parsePossessionMonthsOut(possession: string): number | null {
+  if (possession === "Ready") return 0;
+  const parts = possession.split(" ");
+  if (parts.length !== 2) return null;
+  const mIdx = MONTHS.indexOf(parts[0]);
+  const yr = parseInt(parts[1]);
+  if (mIdx < 0 || isNaN(yr)) return null;
+  const now = new Date();
+  return (yr - now.getFullYear()) * 12 + (mIdx - now.getMonth());
+}
+
+function PossessionBadge({ possession }: { possession: string }) {
+  const mo = parsePossessionMonthsOut(possession);
+  if (mo === null) return <span className="text-[10px] text-muted-foreground">{possession}</span>;
+  if (mo <= 0) return <span className="text-[10px] font-medium text-success">Ready</span>;
+  if (mo <= 12) return <span className="text-[10px] font-medium text-warning">{possession}</span>;
+  return <span className="text-[10px] font-medium text-primary">{possession}</span>;
+}
+
+function SupplyIntelPanel({ parcel, showName }: { parcel: Parcel; showName: boolean }) {
+  const comps = parcel.sources.magicbricksComps;
+  const yoy = parcel.sources.rezy.yoyGrowthPct;
+
+  const enriched = comps.map((c) => ({ ...c, monthsOut: parsePossessionMonthsOut(c.possession) }));
+  const ready = enriched.filter((c) => (c.monthsOut ?? 1) <= 0);
+  const pipeline = enriched.filter((c) => (c.monthsOut ?? 1) > 0);
+  const upcoming = enriched.filter((c) => c.monthsOut !== null && c.monthsOut > 12);
+
+  // Estimate unsold inventory — conservative unit count per project
+  const AVG_UNITS = 250;
+  const unsold = Math.round(ready.length * AVG_UNITS * 0.15 + pipeline.length * AVG_UNITS * 0.55);
+
+  // Monthly velocity proxy from YoY price growth
+  const velocity = yoy >= 25 ? 40 : yoy >= 15 ? 25 : yoy >= 10 ? 15 : 8;
+  const moi = unsold > 0 ? Math.round(unsold / velocity) : 0;
+
+  const moiLabel = moi <= 9 ? "Seller's market" : moi <= 18 ? "Balanced" : "Buyer's market";
+  const moiColor = moi <= 9 ? "var(--color-success)" : moi <= 18 ? "#d99a2b" : "var(--color-destructive)";
+
+  const maxDist = comps.length ? Math.max(...comps.map((c) => c.distanceKm)) : 5;
+
+  return (
+    <div className="rounded-lg border p-4 space-y-4">
+      {showName && <div className="text-sm font-medium mb-1">{parcel.name}</div>}
+
+      {comps.length === 0 ? (
+        <div className="text-sm text-muted-foreground">No comparable projects on record for this micro-market.</div>
+      ) : (
+        <>
+          {/* 3 headline stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-md border p-3 text-center">
+              <div className="text-xl font-bold">{unsold.toLocaleString("en-IN")}</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">Est. unsold units within {maxDist.toFixed(1)} km</div>
+            </div>
+            <div className="rounded-md border p-3 text-center">
+              <div className="text-xl font-bold" style={{ color: moiColor }}>{moi}m</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">Months of inventory</div>
+              <div className="text-[10px] font-semibold mt-0.5" style={{ color: moiColor }}>{moiLabel}</div>
+            </div>
+            <div className="rounded-md border p-3 text-center">
+              <div className="text-xl font-bold">{upcoming.length}</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">Upcoming launches (&gt;12m out)</div>
+            </div>
+          </div>
+
+          {/* Supply pipeline */}
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Nearby supply pipeline</div>
+            <div className="space-y-1.5">
+              {enriched.map((c) => (
+                <div key={c.url} className="flex items-center justify-between gap-3 rounded border px-2.5 py-2">
+                  <div className="min-w-0">
+                    <a href={c.url} target="_blank" rel="noreferrer"
+                      className="text-xs font-medium text-foreground hover:text-primary truncate block">
+                      {c.name}
+                    </a>
+                    <span className="text-[11px] text-muted-foreground">{c.configs} · {c.distanceKm} km away</span>
+                  </div>
+                  <div className="shrink-0 text-right space-y-0.5">
+                    <PossessionBadge possession={c.possession} />
+                    <div className="text-[11px] text-muted-foreground">Rs {c.pricePerSqft.toLocaleString("en-IN")}/sft</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Methodology note */}
+          <div className="text-[10px] text-muted-foreground/60 border-t pt-2">
+            Unsold units estimated: {ready.length} completed (~15% residual) + {pipeline.length} under construction (~55% unsold) × ~{AVG_UNITS} units avg.
+            Velocity proxy: ~{velocity} units/month from {yoy}% YoY price growth (rezy.in). Source: MagicBricks comps.
+          </div>
+        </>
+      )}
     </div>
   );
 }
