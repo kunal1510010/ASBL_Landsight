@@ -85,3 +85,23 @@ export function simulate(i: SimInput): SimResult {
 }
 
 export const inrCr = (n: number) => `Rs ${(n / 1e7).toFixed(1)} Cr`;
+
+/** Returns the 0-based index into companyMonthly with maximum cashflow headroom. */
+export function findBestStartMonth(
+  outlayCr: number,
+  companyMonthly: MonthCash[],
+  policy: FinanceSummary["policy"],
+  spreadMonths = 12,
+): number {
+  const maxStart = Math.max(0, companyMonthly.length - spreadMonths);
+  let bestIdx = 0;
+  let bestHeadroom = -Infinity;
+  for (let i = 0; i <= maxStart; i++) {
+    const r = assessAcquisition(outlayCr, companyMonthly, policy, i, spreadMonths);
+    if (r.headroomCr > bestHeadroom) {
+      bestHeadroom = r.headroomCr;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}

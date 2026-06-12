@@ -22,6 +22,7 @@ export interface MagicBricksComp {
 
 export interface Parcel {
   id: string;
+  city: "Hyderabad" | "Bangalore" | "Mumbai";
   name: string;
   area: string;
   acres: number;

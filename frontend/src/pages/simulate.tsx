@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/app-shell";
 import { fetchParcels, fetchFinance } from "@/lib/api";
-import { simulate, assessAcquisition, inrCr } from "@/lib/engine";
+import { simulate, assessAcquisition, findBestStartMonth, inrCr } from "@/lib/engine";
 import type { Parcel, FinanceSummary } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent, Button, cn } from "@/components/ui";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, ReferenceLine,
 } from "recharts";
-import { Calculator, Wallet } from "lucide-react";
+import { Calculator, Wallet, CalendarClock, Star } from "lucide-react";
 
 const tooltipStyle = { backgroundColor: "white", border: "1px solid #ddd", borderRadius: 8, fontSize: 12 };
 
@@ -42,6 +42,10 @@ export default function SimulatePage() {
   const [growthPct, setGrowthPct] = useState(8);
   const [years, setYears] = useState(5);
 
+  // Purchase timing
+  const [startMonthIdx, setStartMonthIdx] = useState<number | null>(null); // null = use best
+  const [landGrowthPct, setLandGrowthPct] = useState(8);
+
   // initialize from real calibration + parcel benchmark once loaded
   useEffect(() => {
     if (finance && avgSft === 0) setAvgSft(finance.calibration.avgUnitSqft);
@@ -52,19 +56,36 @@ export default function SimulatePage() {
 
   const costPerSft = finance?.calibration.constructionCostPerSqft ?? 7740;
 
+  // Best month: max headroom across all possible start months
+  const bestMonthIdx = useMemo(() => {
+    if (!finance || !parcel) return 0;
+    return findBestStartMonth(parcel.landOutlayCr, finance.companyMonthly, finance.policy);
+  }, [finance, parcel]);
+
+  // Use chosen month or fall back to best
+  const activeMonthIdx = startMonthIdx ?? bestMonthIdx;
+
+  // Land cost escalates with time: rate × (1 + landGrowthPct/100)^(months/12)
+  const adjustedLandOutlayCr = useMemo(() => {
+    if (!parcel) return 0;
+    const multiplier = Math.pow(1 + landGrowthPct / 100, activeMonthIdx / 12);
+    return parseFloat((parcel.landOutlayCr * multiplier).toFixed(2));
+  }, [parcel, activeMonthIdx, landGrowthPct]);
+
+
   const sim = useMemo(() => {
     if (!parcel || avgSft === 0 || pricePerSft === 0) return null;
     return simulate({
       towers, floors, unitsPerFloor, avgSft, pricePerSft, growthPct, years,
-      landOutlayCr: parcel.landOutlayCr,
+      landOutlayCr: adjustedLandOutlayCr,
       constructionCostPerSqft: costPerSft,
     });
-  }, [parcel, towers, floors, unitsPerFloor, avgSft, pricePerSft, growthPct, years, costPerSft]);
+  }, [parcel, towers, floors, unitsPerFloor, avgSft, pricePerSft, growthPct, years, costPerSft, adjustedLandOutlayCr]);
 
   const financeCheck = useMemo(() => {
     if (!finance || !parcel) return null;
-    return assessAcquisition(parcel.landOutlayCr, finance.companyMonthly, finance.policy);
-  }, [finance, parcel]);
+    return assessAcquisition(adjustedLandOutlayCr, finance.companyMonthly, finance.policy, activeMonthIdx);
+  }, [finance, parcel, adjustedLandOutlayCr, activeMonthIdx]);
 
   if (!parcel || !sim) {
     return (
@@ -117,6 +138,104 @@ export default function SimulatePage() {
           </CardContent>
         </Card>
 
+        {/* Purchase timing */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4" /> Purchase timing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Month selector */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">When to buy land</div>
+                <select
+                  className="w-full rounded-md border bg-card px-3 py-2 text-sm"
+                  value={activeMonthIdx}
+                  onChange={(e) => setStartMonthIdx(Number(e.target.value))}
+                >
+                  {finance?.companyMonthly.map((m, i) => (
+                    i <= (finance.companyMonthly.length - 12) && (
+                      <option key={i} value={i}>
+                        {m.label}{i === bestMonthIdx ? "  ★ Recommended" : ""}
+                      </option>
+                    )
+                  ))}
+                </select>
+                {startMonthIdx !== null && startMonthIdx !== bestMonthIdx && (
+                  <button
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                    onClick={() => setStartMonthIdx(null)}
+                  >
+                    <Star className="h-3 w-3" /> Jump to recommended ({finance?.companyMonthly[bestMonthIdx]?.label})
+                  </button>
+                )}
+                {(startMonthIdx === null || startMonthIdx === bestMonthIdx) && (
+                  <div className="text-xs text-success flex items-center gap-1">
+                    <Star className="h-3 w-3 fill-current" />
+                    Optimal month — highest portfolio headroom
+                  </div>
+                )}
+              </div>
+
+              {/* Land cost at selected month */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Land cost impact</div>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Today (Jun 2026)</span>
+                    <span>Rs {parcel.landOutlayCr.toLocaleString("en-IN")} Cr</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">At {finance?.companyMonthly[activeMonthIdx]?.label}</span>
+                    <span className={cn("font-semibold", adjustedLandOutlayCr > parcel.landOutlayCr ? "text-destructive" : "text-success")}>
+                      Rs {adjustedLandOutlayCr.toLocaleString("en-IN")} Cr
+                    </span>
+                  </div>
+                  {activeMonthIdx > 0 && (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Premium over today</span>
+                      <span>+{(((adjustedLandOutlayCr / parcel.landOutlayCr) - 1) * 100).toFixed(1)}%</span>
+                    </div>
+                  )}
+                </div>
+                <div className="pt-1">
+                  <NumberField
+                    label={`Land appreciation (${landGrowthPct}% p.a.)`}
+                    value={landGrowthPct} onChange={setLandGrowthPct}
+                    min={0} max={25} hideInput
+                  />
+                </div>
+              </div>
+
+              {/* Headroom at selected month */}
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Portfolio headroom</div>
+                {financeCheck && (
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Headroom</span>
+                      <span className={cn("font-semibold", financeCheck.approved ? "text-success" : "text-destructive")}>
+                        Rs {financeCheck.headroomCr} Cr
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Cash trough</span>
+                      <span>Rs {financeCheck.worstCr} Cr in {financeCheck.worstMonth}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Credit limit</span>
+                      <span>−Rs {Math.abs(financeCheck.limitCr)} Cr</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </CardContent>
+        </Card>
+
         {/* Metrics */}
         <Card>
           <CardContent className="!py-4">
@@ -126,7 +245,7 @@ export default function SimulatePage() {
               <Metric value={`Rs ${sim.peakNeedCr} Cr`} label="Peak funding need" />
               <Metric value={sim.totalUnits.toLocaleString("en-IN")} label="Total units" />
               <Metric value={`${(sim.sellableSft / 1000).toFixed(0)}k sft`} label="Sellable area" />
-              <Metric value={`Rs ${parcel.landOutlayCr.toLocaleString("en-IN")} Cr`} label="Land outlay (Y1)" />
+              <Metric value={`Rs ${adjustedLandOutlayCr.toLocaleString("en-IN")} Cr`} label={`Land outlay at ${finance?.companyMonthly[activeMonthIdx]?.label ?? "Y1"}`} />
             </div>
           </CardContent>
         </Card>

@@ -42,6 +42,7 @@ export function generateParcelFromPolygon(
 
   return {
     id,
+    city: ref.city,
     name: name?.trim() || `Custom parcel (${acres.toFixed(1)} ac)`,
     area: ref.area,
     acres,

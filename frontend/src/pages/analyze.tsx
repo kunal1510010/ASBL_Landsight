@@ -5,6 +5,8 @@ import { fetchParcels, fetchFinance } from "@/lib/api";
 import { assessAcquisition } from "@/lib/engine";
 import type { Parcel, FinanceSummary } from "@/lib/types";
 import { Card, CardContent, Button, Badge, Section, cn } from "@/components/ui";
+import { getApprovalsForCity } from "@/lib/approvals";
+import type { City } from "@/lib/approvals";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
   Tooltip, ResponsiveContainer, CartesianGrid, Legend, ReferenceLine,
@@ -346,6 +348,19 @@ export default function AnalyzePage() {
             ))}
           </div>
         </Section>
+
+        {/* 10. Approvals checklist */}
+        <Section
+          icon={<ShieldAlert className="h-4 w-4" />}
+          title="10. Approval checklist"
+          subtitle="City-specific regulatory approvals required from land acquisition to occupancy"
+        >
+          <div className={cn("grid gap-4", compare && "md:grid-cols-2")}>
+            {effective.map((p) => (
+              <ApprovalsPanel key={p.id} parcel={p} showName={compare} />
+            ))}
+          </div>
+        </Section>
       </div>
     </AppShell>
   );
@@ -409,6 +424,41 @@ function Demo({ icon, label, value }: { icon: React.ReactNode; label: string; va
       <div className="mx-auto w-fit text-muted-foreground">{icon}</div>
       <div className="text-sm font-semibold mt-1">{value}</div>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ApprovalsPanel({ parcel, showName }: { parcel: Parcel; showName: boolean }) {
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const groups = getApprovalsForCity(parcel.city as City);
+
+  return (
+    <div className="rounded-lg border p-4 space-y-2">
+      {showName && <div className="text-sm font-medium mb-3">{parcel.name} — {parcel.city}</div>}
+      {groups.map((group) => {
+        const isOpen = openCategory === group.category;
+        return (
+          <div key={group.category} className="border rounded-md overflow-hidden">
+            <button
+              className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium bg-muted/40 hover:bg-muted transition-colors text-left"
+              onClick={() => setOpenCategory(isOpen ? null : group.category)}
+            >
+              <span>{group.category}</span>
+              <span className="text-muted-foreground text-xs">{isOpen ? "▲" : "▼"} {group.items.length} items</span>
+            </button>
+            {isOpen && (
+              <div className="divide-y">
+                {group.items.map((item) => (
+                  <div key={item.name} className="px-3 py-2 grid grid-cols-[1fr_1.4fr] gap-2 text-xs">
+                    <span className="text-muted-foreground">{item.name}</span>
+                    <span className="font-medium text-foreground">{item.approval}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -29,6 +29,15 @@ const ANALYSIS_STEPS = [
   "Building analysis report...",
 ];
 
+type CityFilter = "all" | "Hyderabad" | "Bangalore" | "Mumbai";
+
+const CITY_MAP_CONFIG: Record<CityFilter, { center: [number, number]; zoom: number }> = {
+  all:        { center: [17.385, 78.486], zoom: 11 },
+  Hyderabad:  { center: [17.385, 78.486], zoom: 11 },
+  Bangalore:  { center: [12.972, 77.594], zoom: 11 },
+  Mumbai:     { center: [19.076, 72.878], zoom: 10 },
+};
+
 export default function DiscoverPage() {
   const navigate = useNavigate();
   const [parcels, setParcels] = useState<Parcel[]>([]);
@@ -36,6 +45,7 @@ export default function DiscoverPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [scannedIds, setScannedIds] = useState<string[] | null>(null);
+  const [cityFilter, setCityFilter] = useState<CityFilter>("all");
 
   // Custom drawn parcel state
   const [drawnPolygon, setDrawnPolygon] = useState<[number, number][] | null>(null);
@@ -59,7 +69,9 @@ export default function DiscoverPage() {
   }, []);
 
   const selected = parcels.find((p) => p.id === selectedId) ?? null;
-  const visible = scannedIds === null ? parcels : parcels.filter((p) => scannedIds.includes(p.id));
+  const cityFiltered = cityFilter === "all" ? parcels : parcels.filter((p) => p.city === cityFilter);
+  const visible = scannedIds === null ? cityFiltered : cityFiltered.filter((p) => scannedIds.includes(p.id));
+  const mapConfig = CITY_MAP_CONFIG[cityFilter];
 
   // Auto-fetch live market data whenever a non-blocked parcel is selected
   useEffect(() => {
@@ -143,6 +155,8 @@ export default function DiscoverPage() {
                     if (ids.length > 0) setSelectedId(ids[0]);
                   }}
                   onParcelDrawn={handleParcelDrawn}
+                  center={mapConfig.center}
+                  zoom={mapConfig.zoom}
                 />
               ) : (
                 <div className="h-full w-full bg-muted animate-pulse" />
@@ -151,6 +165,27 @@ export default function DiscoverPage() {
           </Card>
 
           <div className="space-y-3 lg:max-h-[680px] lg:overflow-y-auto lg:pr-0.5">
+            <div className="flex gap-1 flex-wrap">
+              {(["all", "Hyderabad", "Bangalore", "Mumbai"] as CityFilter[]).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => {
+                    setCityFilter(c);
+                    setScannedIds(null);
+                    setScanState("idle");
+                    setDrawnPolygon(null);
+                    const firstMatch = parcels.find((p) => c === "all" || p.city === c);
+                    setSelectedId(firstMatch?.id ?? null);
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors",
+                    cityFilter === c ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-muted",
+                  )}
+                >
+                  {c === "all" ? "All" : c}
+                </button>
+              ))}
+            </div>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between">
@@ -171,7 +206,11 @@ export default function DiscoverPage() {
                 ) : visible.length === 0 ? (
                   <div className="p-4 text-sm text-muted-foreground text-center">
                     <ScanSearch className="h-5 w-5 mx-auto mb-2 opacity-60" />
-                    No open land detected in the scanned area. Try a wider rectangle.
+                    {scanState === "done"
+                      ? "No open land detected in the scanned area. Try a wider rectangle."
+                      : cityFilter !== "all"
+                      ? `No parcels listed for ${cityFilter} yet.`
+                      : "Use the scan tool on the map to detect available land."}
                   </div>
                 ) : (
                   visible.map((p) => (

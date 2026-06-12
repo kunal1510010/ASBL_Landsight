@@ -29,6 +29,8 @@ interface Props {
   onScanStart?: () => void;
   onScanComplete?: (r: ScanResult) => void;
   onParcelDrawn?: (polygon: [number, number][]) => void;
+  center?: [number, number];
+  zoom?: number;
 }
 
 const STATUS_COLOR: Record<Parcel["status"], string> = {
@@ -40,6 +42,7 @@ const STATUS_COLOR: Record<Parcel["status"], string> = {
 export default function ParcelMap({
   parcels, selectedId, onSelect, scannedIds = null,
   onScanStart, onScanComplete, onParcelDrawn,
+  center, zoom,
 }: Props) {
   const [satellite, setSatellite] = useState(true);
   const [scanMode, setScanMode] = useState(false);
@@ -84,6 +87,8 @@ export default function ParcelMap({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
         )}
+
+        {center && zoom !== undefined && <MapFlyTo center={center} zoom={zoom} />}
 
         {FTL_ZONES.map((z) => (
           <Polygon
@@ -345,6 +350,15 @@ function DrawController({
       onClose();
     },
   });
+  return null;
+}
+
+function MapFlyTo({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, zoom, { duration: 1.2 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center[0], center[1], zoom]);
   return null;
 }
 
