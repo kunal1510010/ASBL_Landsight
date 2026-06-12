@@ -1,0 +1,29 @@
+# Render Blueprint - deploy both services in one click (New + > Blueprint)
+services:
+  - type: web
+    name: landsight-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL # Neon pooled connection string
+        sync: false
+      - key: NODE_VERSION
+        value: 20.18.0
+
+  - type: web
+    name: landsight-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite # SPA fallback
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL # e.g. https://landsight-api.onrender.com
+        sync: false

@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --color-background: oklch(0.985 0.005 100);
+  --color-foreground: oklch(0.22 0.03 160);
+  --color-card: oklch(1 0 0);
+  --color-muted: oklch(0.95 0.015 130);
+  --color-muted-foreground: oklch(0.48 0.03 160);
+  --color-primary: oklch(0.42 0.12 160);
+  --color-primary-foreground: oklch(0.985 0.005 100);
+  --color-accent: oklch(0.72 0.16 75);
+  --color-destructive: oklch(0.58 0.22 25);
+  --color-success: oklch(0.6 0.15 150);
+  --color-warning: oklch(0.78 0.16 75);
+  --color-border: oklch(0.9 0.01 130);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { border-color: var(--color-border); }
+
+.leaflet-container { z-index: 0; font-family: inherit; }
+.leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 1; }
+
+@keyframes ls-scanline { 0% { top: 0% } 100% { top: 100% } }
+@keyframes ls-pulse { 0%, 100% { fill-opacity: .08 } 50% { fill-opacity: .28 } }
+.ls-scan-rect path { animation: ls-pulse .9s ease-in-out infinite; }
+.ls-blocked path { animation: ls-pulse 1.4s ease-in-out infinite; }
+.ls-crosshair { cursor: crosshair !important; }
+
+input[type="range"] { accent-color: var(--color-primary); }
